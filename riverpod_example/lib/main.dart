@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 abstract class WebsocketClient {
-  Stream<int> getCountStream();
+  Stream<int> getCountStream([int start]);
 }
 
 class FakeWebsocketClient implements WebsocketClient {
   @override
-  Stream<int> getCountStream() async* {
-    int i = 0;
+  Stream<int> getCountStream([int start = 0]) async* {
+    int i = start;
     while (true) {
       await Future.delayed(const Duration(milliseconds: 500));
       i = i + 1;
@@ -23,9 +23,9 @@ final webSocketProvider = Provider<WebsocketClient>(
   },
 );
 
-final newCounterProvider = StreamProvider<int>((ref) {
+final newCounterProvider = StreamProvider.family<int,int>((ref,startValue) {
   final wsClient = ref.watch(webSocketProvider);
-  return wsClient.getCountStream();
+  return wsClient.getCountStream(startValue);
 });
 
 final counterProvider = StateProvider.autoDispose((ref) => 0);
@@ -128,7 +128,7 @@ class CounterPageStream extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final AsyncValue<int> counter = ref.watch(newCounterProvider);
+    final AsyncValue<int> counter = ref.watch(newCounterProvider(5));
 
     return Scaffold(
       appBar: AppBar(
